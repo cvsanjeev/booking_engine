@@ -46,7 +46,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { properties, selectedProperty, setSelectedProperty } = useProperties();
   
-  const currentProperty = properties.find(p => p.id === selectedProperty);
+  const currentProperty = selectedProperty;
   
   return (
     <div className="min-h-screen bg-gray-100">
@@ -85,7 +85,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     {properties.map((property) => (
                       <DropdownMenuItem 
                         key={property.id}
-                        onClick={() => setSelectedProperty(property.id)}
+                        onClick={() => setSelectedProperty(property)}
                       >
                         {property.name}
                       </DropdownMenuItem>
@@ -149,7 +149,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     {properties.map((property) => (
                       <DropdownMenuItem 
                         key={property.id}
-                        onClick={() => setSelectedProperty(property.id)}
+                        onClick={() => setSelectedProperty(property)}
                       >
                         {property.name}
                       </DropdownMenuItem>

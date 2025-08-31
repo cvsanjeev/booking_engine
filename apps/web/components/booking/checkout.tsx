@@ -38,7 +38,12 @@ const checkoutSchema = z.object({
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
-export function Checkout({ property, hold }) {
+interface CheckoutProps {
+  property: any;
+  hold: any;
+}
+
+export function Checkout({ property, hold }: CheckoutProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,16 +76,19 @@ export function Checkout({ property, hold }) {
       // Create payment order
       const paymentResult = await createReservationPayment({
         holdId: hold.id,
-        customerName,
-        customerEmail: data.email,
-        customerPhone: data.phone,
-        customerAddress: data.address,
-        specialRequests: data.specialRequests,
-        saveInfo: data.saveInfo,
+        paymentMethod: 'razorpay',
+        customerInfo: {
+          name: customerName,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          specialRequests: data.specialRequests,
+          saveInfo: data.saveInfo,
+        },
       });
       
-      if (!paymentResult.success) {
-        throw new Error(paymentResult.error || 'Failed to create payment');
+      if (!paymentResult.orderId) {
+        throw new Error('Failed to create payment');
       }
       
       // Initialize Razorpay
@@ -90,7 +98,7 @@ export function Checkout({ property, hold }) {
         currency: property.currency,
         name: property.name,
         description: `Booking for ${hold.unitTypeName}`,
-        order_id: paymentResult.razorpayOrderId,
+        order_id: paymentResult.orderId,
         prefill: {
           name: customerName,
           email: data.email,
@@ -103,7 +111,7 @@ export function Checkout({ property, hold }) {
         theme: {
           color: '#4f46e5',
         },
-        handler: function(response) {
+        handler: function(response: any) {
           // Handle successful payment
           handlePaymentSuccess(response);
         },
@@ -121,7 +129,7 @@ export function Checkout({ property, hold }) {
   }
   
   // Handle Razorpay payment success
-  async function handlePaymentSuccess(response) {
+  async function handlePaymentSuccess(response: any) {
     try {
       // Navigate to confirmation page
       router.push(`/${property.code}/confirmation/${hold.id}?paymentId=${response.razorpay_payment_id}`);

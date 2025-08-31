@@ -7,11 +7,22 @@ interface Reservation {
   checkOut: Date
   status: string
   total: number
+  unitTypeCode?: string
 }
 
-export function useReservations() {
+interface Block {
+  id: string
+  startDate: Date
+  endDate: Date
+  reason: string
+  unitTypeCode?: string
+}
+
+export function useReservations(property?: any, startDate?: string, endDate?: string) {
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [blocks, setBlocks] = useState<Block[]>([])
   const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -24,6 +35,7 @@ export function useReservations() {
         checkOut: new Date('2025-02-05'),
         status: 'CONFIRMED',
         total: 16520,
+        unitTypeCode: 'premium-1bhk',
       },
       {
         id: '2',
@@ -32,14 +44,27 @@ export function useReservations() {
         checkOut: new Date('2025-02-18'),
         status: 'PENDING_PAYMENT',
         total: 13216,
+        unitTypeCode: 'standard-1bhk',
+      },
+    ]
+
+    const mockBlocks: Block[] = [
+      {
+        id: '1',
+        startDate: new Date('2025-02-10'),
+        endDate: new Date('2025-02-12'),
+        reason: 'Maintenance',
+        unitTypeCode: 'premium-1bhk',
       },
     ]
 
     setTimeout(() => {
       setReservations(mockReservations)
+      setBlocks(mockBlocks)
       setLoading(false)
+      setIsLoading(false)
     }, 1000)
-  }, [])
+  }, [property, startDate, endDate])
 
-  return { reservations, loading, error }
+  return { reservations, blocks, loading, isLoading, error }
 }

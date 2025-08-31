@@ -48,7 +48,11 @@ const searchSchema = z.object({
 
 type SearchFormValues = z.infer<typeof searchSchema>;
 
-export function BookingSearch({ properties }) {
+interface BookingSearchProps {
+  properties: any[];
+}
+
+export function BookingSearch({ properties }: BookingSearchProps) {
   const router = useRouter();
   const today = new Date();
   
@@ -133,10 +137,8 @@ export function BookingSearch({ properties }) {
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
-                        mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        initialFocus
                         disabled={(date) => date < today}
                       />
                     </PopoverContent>
@@ -167,10 +169,8 @@ export function BookingSearch({ properties }) {
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
-                        mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        initialFocus
                         disabled={(date) => 
                           date < form.getValues().checkIn || 
                           date < today

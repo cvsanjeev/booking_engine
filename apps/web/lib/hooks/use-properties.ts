@@ -10,6 +10,7 @@ interface Property {
 
 export function useProperties() {
   const [properties, setProperties] = useState<Property[]>([])
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,9 +35,10 @@ export function useProperties() {
 
     setTimeout(() => {
       setProperties(mockProperties)
+      setSelectedProperty(mockProperties[0]) // Select first property by default
       setLoading(false)
     }, 1000)
   }, [])
 
-  return { properties, loading, error }
+  return { properties, selectedProperty, setSelectedProperty, loading, error }
 }

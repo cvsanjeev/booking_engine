@@ -29,15 +29,18 @@ export default async function SearchPage({
     notFound();
   }
   
-  // Convert guests to number
+  // Convert guests to number and dates to Date objects
   const guestsCount = parseInt(guests, 10);
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
   
   // Search for availability
   const availability = await searchAvailability({
     propertyId: property.id,
-    checkIn,
-    checkOut,
-    guests: guestsCount,
+    checkIn: checkInDate,
+    checkOut: checkOutDate,
+    adults: guestsCount,
+    children: 0,
   });
   
   return (
@@ -52,7 +55,7 @@ export default async function SearchPage({
       {/* Main content */}
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">
-          {availability.unitTypes.filter(ut => ut.available).length} Available Options at {property.name}
+          {availability.filter(ut => ut.available > 0).length} Available Options at {property.name}
         </h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

@@ -68,3 +68,7 @@ export async function getProperty(code: string): Promise<Property | null> {
   const properties = await getProperties();
   return properties.find(p => p.code === code) || null;
 }
+
+export async function getPropertyByCode(code: string): Promise<Property | null> {
+  return getProperty(code);
+}
