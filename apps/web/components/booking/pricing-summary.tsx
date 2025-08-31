@@ -17,7 +17,12 @@ import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import { applyPromoCode } from '@/lib/actions/reservation';
 
-export function PricingSummary({ property, hold }) {
+interface PricingSummaryProps {
+  property: any;
+  hold: any;
+}
+
+export function PricingSummary({ property, hold }: PricingSummaryProps) {
   const [isNightlyBreakdownOpen, setIsNightlyBreakdownOpen] = useState(false);
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
   const [promoCode, setPromoCode] = useState('');
@@ -39,10 +44,10 @@ export function PricingSummary({ property, hold }) {
     setPromoError('');
     
     try {
-      const result = await applyPromoCode(hold.id, promoCode);
+      const result = await applyPromoCode({ holdId: hold.id, promoCode });
       
-      if (!result.success) {
-        setPromoError(result.error || 'Invalid promo code');
+      if (!result.discount) {
+        setPromoError('Invalid promo code');
       } else {
         // Refresh the page to show updated pricing
         window.location.reload();
@@ -134,7 +139,7 @@ export function PricingSummary({ property, hold }) {
         
         {isNightlyBreakdownOpen && hold.breakdown?.nightly && (
           <div className="pl-4 space-y-2 pt-2">
-            {hold.breakdown.nightly.map((night, index) => (
+            {hold.breakdown.nightly.map((night: any, index: number) => (
               <div key={index} className="flex justify-between text-xs text-gray-600">
                 <span>{format(new Date(night.date), 'EEE, MMM d')}</span>
                 <span>
@@ -146,24 +151,24 @@ export function PricingSummary({ property, hold }) {
             ))}
             
             <div className="text-xs text-gray-600 pt-1">
-              {hold.breakdown.nightly.some(n => n.weekend) && (
+              {hold.breakdown.nightly.some((n: any) => n.weekend) && (
                 <p><span className="text-blue-600">*</span> Weekend rate</p>
               )}
-              {hold.breakdown.nightly.some(n => n.seasonName) && (
+              {hold.breakdown.nightly.some((n: any) => n.seasonName) && (
                 <p><span className="text-orange-600">†</span> Seasonal rate</p>
               )}
             </div>
           </div>
         )}
         
-        {hold.breakdown?.fees?.map((fee, index) => (
+        {hold.breakdown?.fees?.map((fee: any, index: number) => (
           <div key={index} className="flex justify-between text-sm">
             <span>{fee.name}</span>
             <span>{formatCurrency(fee.amount / 100, property.currency)}</span>
           </div>
         ))}
         
-        {hold.breakdown?.taxes?.map((tax, index) => (
+        {hold.breakdown?.taxes?.map((tax: any, index: number) => (
           <div key={index} className="flex justify-between text-sm">
             <span>{tax.name} ({tax.rate}%)</span>
             <span>{formatCurrency(tax.amount / 100, property.currency)}</span>

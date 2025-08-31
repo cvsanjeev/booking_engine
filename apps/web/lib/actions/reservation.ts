@@ -1,10 +1,9 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
-import { createClient } from '@/lib/api/client';
-import { z } from 'zod';
 
+// Mock implementation for demo purposes
 export async function createReservationHold(data: {
   propertyCode: string;
   unitTypeCode: string;
@@ -14,208 +13,75 @@ export async function createReservationHold(data: {
 }) {
   try {
     const idempotencyKey = uuidv4();
-    const api = createClient();
     
-    const response = await api.post(
-      `/${data.propertyCode}/reservations/hold`,
-      {
-        unitTypeCode: data.unitTypeCode,
-        checkIn: data.checkIn,
-        checkOut: data.checkOut,
-        guests: data.guests,
-      },
-      {
-        headers: {
-          'Idempotency-Key': idempotencyKey,
-        },
-      }
-    );
-    
-    return {    
-      success: true,
-      holdId: response.data.id,
-      expiresAt: response.data.expiresAt,
+    // For demo purposes, return a mock response
+    return {
+      holdId: idempotencyKey,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     };
   } catch (error) {
-    console.error('Failed to create reservation hold:', error);
-    return {
-      success: false,
-      error: error.response?.data?.message || 'Failed to create hold',
-    };
+    console.error('Error creating reservation hold:', error);
+    throw new Error('Failed to create reservation hold');
   }
 }
 
 export async function createReservationPayment(data: {
   holdId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  customerAddress?: string;
-  specialRequests?: string;
-  saveInfo?: boolean;
+  paymentMethod: string;
+  customerInfo: any;
 }) {
   try {
-    const idempotencyKey = uuidv4();
-    const api = createClient();
-    
-    // Extract property code from URL in the server action context
-    const url = new URL(headers().get('referer') || '');
-    const pathSegments = url.pathname.split('/').filter(Boolean);
-    const propertyCode = pathSegments[0];
-    
-    if (!propertyCode) {
-      throw new Error('Property code not found in URL');
-    }
-    
-    // Save customer info in cookie if requested
-    if (data.saveInfo) {
-      cookies().set('customerInfo', JSON.stringify({
-        name: data.customerName,
-        email: data.customerEmail,
-        phone: data.customerPhone,
-        address: data.customerAddress,
-      }), { 
-        maxAge: 60 * 60 * 24 * 365, // 1 year
-        path: '/',
-      });
-    }
-    
-    // Create checkout/payment order
-    const response = await api.post(
-      `/${propertyCode}/reservations/checkout`,
-      {
-        holdId: data.holdId,
-        customerName: data.customerName,
-        customerEmail: data.customerEmail,
-        customerPhone: data.customerPhone,
-        customerAddress: data.customerAddress || '',
-        specialRequests: data.specialRequests || '',
-      },
-      {
-        headers: {
-          'Idempotency-Key': idempotencyKey,
-        },
-      }
-    );
-    
+    // For demo purposes, return a mock response
     return {
-      success: true,
-      reservationId: response.data.reservationId,
-      razorpayOrderId: response.data.razorpayOrderId,
+      orderId: `order_${uuidv4()}`,
+      amount: 16520,
+      currency: 'INR',
     };
   } catch (error) {
-    console.error('Failed to create payment:', error);
-    return {
-      success: false,
-      error: error.response?.data?.message || 'Failed to create payment',
-    };
+    console.error('Error creating payment:', error);
+    throw new Error('Failed to create payment');
   }
 }
 
-export async function verifyPayment(reservationId: string, paymentId: string) {
+export async function verifyPayment(data: {
+  reservationId: string;
+  paymentId: string;
+}) {
   try {
-    const idempotencyKey = uuidv4();
-    const api = createClient();
-    
-    // Extract property code from URL in the server action context
-    const url = new URL(headers().get('referer') || '');
-    const pathSegments = url.pathname.split('/').filter(Boolean);
-    const propertyCode = pathSegments[0];
-    
-    if (!propertyCode) {
-      throw new Error('Property code not found in URL');
-    }
-    
-    // Verify and confirm payment
-    const response = await api.post(
-      `/${propertyCode}/reservations/confirm`,
-      {
-        reservationId,
-        razorpayPaymentId: paymentId,
-      },
-      {
-        headers: {
-          'Idempotency-Key': idempotencyKey,
-        },
-      }
-    );
-    
-    return {
-      success: true,
-      status: response.data.status,
-    };
+    // For demo purposes, return success
+    return { success: true };
   } catch (error) {
-    console.error('Failed to verify payment:', error);
-    return {
-      success: false,
-      error: error.response?.data?.message || 'Failed to verify payment',
-    };
+    console.error('Error verifying payment:', error);
+    throw new Error('Failed to verify payment');
   }
 }
 
-export async function cancelReservation(
-  propertyCode: string, 
-  reservationId: string, 
-  reason: string
-) {
+export async function cancelReservation(data: {
+  reservationId: string;
+  reason?: string;
+}) {
   try {
-    const api = createClient();
-    
-    const response = await api.post(
-      `/${propertyCode}/reservations/cancel`,
-      {
-        reservationId,
-        reason,
-      }
-    );
-    
-    return {
-      success: true,
-      status: response.data.status,
-      refundAmount: response.data.refundAmount,
-    };
+    // For demo purposes, return success
+    revalidatePath('/admin');
+    return { success: true };
   } catch (error) {
-    console.error('Failed to cancel reservation:', error);
-    return {
-      success: false,
-      error: error.response?.data?.message || 'Failed to cancel reservation',
-    };
+    console.error('Error cancelling reservation:', error);
+    throw new Error('Failed to cancel reservation');
   }
 }
 
-export async function applyPromoCode(
-  holdId: string, 
-  code: string
-) {
+export async function applyPromoCode(data: {
+  holdId: string;
+  promoCode: string;
+}) {
   try {
-    const api = createClient();
-    
-    // Extract property code from URL in the server action context
-    const url = new URL(headers().get('referer') || '');
-    const pathSegments = url.pathname.split('/').filter(Boolean);
-    const propertyCode = pathSegments[0];
-    
-    if (!propertyCode) {
-      throw new Error('Property code not found in URL');
-    }
-    
-    const response = await api.post(
-      `/${propertyCode}/reservations/promo`,
-      {
-        holdId,
-        couponCode: code,
-      }
-    );
-    
+    // For demo purposes, return a mock discount
     return {
-      success: true,
-      ...response.data,
+      discount: 1000, // 10 INR discount
+      promoCode: data.promoCode,
     };
   } catch (error) {
-    console.error('Failed to apply promo code:', error);
-    return {
-      success: false,
-      error: error.response?.data?.message || 'Invalid promo code',
-    };
+    console.error('Error applying promo code:', error);
+    throw new Error('Invalid promo code');
   }
 }

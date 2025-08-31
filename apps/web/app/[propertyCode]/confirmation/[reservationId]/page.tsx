@@ -18,19 +18,20 @@ export default async function ConfirmationPage({
   const { paymentId } = searchParams;
   
   // Get property and reservation data
-  const [property, reservation] = await Promise.all([
+  const [property, initialReservation] = await Promise.all([
     getPropertyByCode(propertyCode),
     getReservation(reservationId)
   ]);
   
   // Validate data
-  if (!property || !reservation) {
+  if (!property || !initialReservation) {
     notFound();
   }
   
   // Verify payment if paymentId is provided and reservation is in PENDING_PAYMENT state
+  let reservation = initialReservation;
   if (paymentId && reservation.status === 'PENDING_PAYMENT') {
-    await verifyPayment(reservationId, paymentId);
+    await verifyPayment({ reservationId, paymentId });
     
     // Refresh reservation data after payment verification
     const updatedReservation = await getReservation(reservationId);
@@ -106,16 +107,18 @@ export default async function ConfirmationPage({
               </div>
               
               <div className="mt-8 flex flex-col md:flex-row gap-4 justify-center">
-                <Button asChild variant="outline">
-                  <Link href={`/${property.code}/manage/${reservation.id}`}>
-                    Manage Booking
-                  </Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/">
-                    Return to Homepage
-                  </Link>
-                </Button>
+                <Link 
+                  href={`/${property.code}/manage/${reservation.id}`}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-50 h-10 px-4 py-2"
+                >
+                  Manage Booking
+                </Link>
+                <Link 
+                  href="/"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2"
+                >
+                  Return to Homepage
+                </Link>
               </div>
             </div>
             

@@ -35,7 +35,7 @@ export function CalendarView() {
   );
   
   // Get selected property
-  const property = properties.find(p => p.id === selectedProperty);
+  const property = selectedProperty;
   
   // Get unit types for the selected property
   const [unitTypes, setUnitTypes] = useState<any[]>([]);

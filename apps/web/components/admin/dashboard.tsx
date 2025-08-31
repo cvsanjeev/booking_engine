@@ -25,7 +25,8 @@ export function Dashboard() {
   
   // Handle property selection
   const handlePropertyChange = (propertyId: string) => {
-    setSelectedProperty(propertyId);
+    const property = properties.find(p => p.id === propertyId);
+    setSelectedProperty(property || null);
     // Could store this in localStorage or in user preferences
   };
   
@@ -118,10 +119,8 @@ export function Dashboard() {
             Calendar
           </h3>
           <Calendar
-            mode="single"
             selected={date}
-            onDayClick={handleSelect}
-            className="rounded-md border"
+            onSelect={handleSelect}
           />
           <Button 
             variant="outline" 
@@ -147,7 +146,7 @@ export function Dashboard() {
             </TabsContent>
             
             <TabsContent value="occupancy">
-              <Overview type="occupancy" />
+              <Overview />
             </TabsContent>
           </Tabs>
         </Card>

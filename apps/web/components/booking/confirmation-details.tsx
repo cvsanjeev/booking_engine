@@ -2,13 +2,18 @@ import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 
-export function ConfirmationDetails({ property, reservation }) {
+interface ConfirmationDetailsProps {
+  property: any;
+  reservation: any;
+}
+
+export function ConfirmationDetails({ property, reservation }: ConfirmationDetailsProps) {
   // Format dates
   const checkIn = new Date(reservation.checkIn);
   const checkOut = new Date(reservation.checkOut);
   
   // Status badge color
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
         return 'bg-green-100 text-green-800';
@@ -82,14 +87,7 @@ export function ConfirmationDetails({ property, reservation }) {
             
             <div className="border rounded-md p-3 bg-gray-50">
               <Calendar
-                mode="range"
-                selected={{
-                  from: checkIn,
-                  to: checkOut,
-                }}
-                className="w-full"
-                disabled
-                readOnly
+                selected={checkIn}
               />
             </div>
           </div>
@@ -110,17 +108,22 @@ export function ConfirmationDetails({ property, reservation }) {
       
       <div className="mt-6">
         <div className="flex gap-4">
-          <Button variant="outline" asChild>
-            <a href={`/api/${property.code}/reservation/${reservation.id}/invoice`} target="_blank" rel="noopener noreferrer">
-              Download Invoice
-            </a>
-          </Button>
+          <a 
+            href={`/api/${property.code}/reservation/${reservation.id}/invoice`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-50 h-10 px-4 py-2"
+          >
+            Download Invoice
+          </a>
           
-          <Button variant="outline" asChild>
-            <a href={`/api/${property.code}/reservation/${reservation.id}/ical`} download="booking.ics">
-              Add to Calendar
-            </a>
-          </Button>
+          <a 
+            href={`/api/${property.code}/reservation/${reservation.id}/ical`} 
+            download="booking.ics"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-50 h-10 px-4 py-2"
+          >
+            Add to Calendar
+          </a>
         </div>
       </div>
       

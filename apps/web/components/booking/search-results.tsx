@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Carousel } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StarIcon, Wifi, Coffee, Users, Check } from 'lucide-react';
@@ -24,7 +24,7 @@ export function SearchResults({ property, availability, checkIn, checkOut, guest
   const [loadingUnitType, setLoadingUnitType] = useState<string | null>(null);
   
   // Filter only available units
-  const availableUnitTypes = availability.unitTypes.filter(ut => ut.available);
+  const availableUnitTypes = availability.filter((ut: any) => ut.available > 0);
   
   // Handle booking
   async function handleBookNow(unitTypeCode: string) {
@@ -40,11 +40,11 @@ export function SearchResults({ property, availability, checkIn, checkOut, guest
         guests,
       });
       
-      if (result.success && result.holdId) {
+      if (result.holdId) {
         // Navigate to checkout
         router.push(`/${property.code}/checkout/${result.holdId}`);
       } else {
-        throw new Error(result.error || 'Failed to create hold');
+        throw new Error('Failed to create hold');
       }
     } catch (error) {
       console.error('Failed to create hold:', error);
@@ -91,15 +91,29 @@ export function SearchResults({ property, availability, checkIn, checkOut, guest
       </div>
       
       {/* Results */}
-      {availableUnitTypes.map((unitType) => (
+      {availableUnitTypes.map((unitType: any) => (
         <div key={unitType.unitTypeId} className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-3">
             {/* Unit type images */}
             <div className="md:col-span-1 relative h-64 md:h-full">
-              <Carousel images={unitType.images || [
-                `/units/${unitType.unitTypeCode.toLowerCase()}-1.jpg`,
-                `/units/${unitType.unitTypeCode.toLowerCase()}-2.jpg`,
-              ]} />
+              <Carousel>
+                <CarouselContent>
+                  {(unitType.images || [
+                    `/units/${unitType.unitTypeCode?.toLowerCase()}-1.jpg`,
+                    `/units/${unitType.unitTypeCode?.toLowerCase()}-2.jpg`,
+                  ]).map((image: string, index: number) => (
+                    <CarouselItem key={index}>
+                      <img 
+                        src={image} 
+                        alt={`${unitType.name} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
             </div>
             
             {/* Unit details */}
