@@ -1,0 +1,271 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  zipCode     String?
+  timezone    String    @default("Asia/Kolkata")
+  currency    String    @default("INR")
+  settings    Json?     // checkin/out, holdTTL, taxes, locale, branding
+  
+  // Relations
+  unitTypes   UnitType[]
+  units       Unit[]
+  ratePlans   RatePlan[]
+  seasons     Season[]
+  coupons     Coupon[]
+  reservations Reservation[]
+  blocks      Block[]
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model UnitType {
+  id            String    @id @default(cuid())
+  propertyId    String
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  code          String
+  name          String
+  baseRate      Int       // in smallest currency unit (paise)
+  baseOccupancy Int       @default(2)
+  maxOccupancy  Int       @default(4)
+  extraGuestFee Int       @default(0)
+  cleaningFee   Int       @default(0)
+  description   String?
+  amenities     String[]
+  images        String[]
+  
+  // Relations
+  units         Unit[]
+  ratePlans     RatePlan[]
+  reservations  Reservation[]
+  blocks        Block[]
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([propertyId, code])
+}
+
+model Unit {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  typeId     String
+  type       UnitType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  code       String
+  name       String?
+  floor      Int?
+  notes      String?
+  active     Boolean  @default(true)
+  
+  // Relations
+  reservations Reservation[] @relation("UnitReservation")
+  blocks      Block[]
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([propertyId, code])
+}
+
+model RatePlan {
+  id          String    @id @default(cuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unitTypeId  String?
+  unitType    UnitType? @relation(fields: [unitTypeId], references: [id])
+  name        String
+  code        String
+  description String?
+  isDefault   Boolean   @default(false)
+  
+  // Pricing options
+  baseRate        Int?    // Override unit type base rate if set
+  weekendUplift   Int     @default(0) // Percentage (20 means 20%)
+  depositRate     Int     @default(100) // Percentage of total required upfront (100 means full payment)
+  advanceDays     Int     @default(0) // Min days before checkin to book
+  minStay         Int     @default(1) // Minimum nights
+  maxStay         Int?    // Maximum nights (null for no limit)
+  active          Boolean @default(true)
+  
+  // Cancellation policy
+  cancellationPolicyType String   @default("FLEXIBLE") // FLEXIBLE, MODERATE, STRICT
+  cancellationFeePercent Int      @default(0) // % of total charged for cancellation
+  freeCancellationHours  Int      @default(24) // Hours before checkin for free cancellation
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([propertyId, code])
+}
+
+model Season {
+  id          String    @id @default(cuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  rates       Json      // Map of unitTypeId -> rate
+  active      Boolean   @default(true)
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Coupon {
+  id            String    @id @default(cuid())
+  propertyId    String
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  code          String
+  description   String?
+  discountType  String    @default("PERCENTAGE") // PERCENTAGE, FIXED
+  discountValue Int       // Amount or percentage
+  maxDiscount   Int?      // Cap for percentage discounts (in smallest currency unit)
+  minBookingValue Int     @default(0) // Minimum booking value for coupon to apply
+  startDate     DateTime?
+  endDate       DateTime?
+  usageLimit    Int?
+  usageCount    Int       @default(0)
+  active        Boolean   @default(true)
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([propertyId, code])
+}
+
+model Reservation {
+  id                String   @id @default(cuid())
+  propertyId        String
+  property          Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unitTypeId        String
+  unitType          UnitType @relation(fields: [unitTypeId], references: [id])
+  unitId            String?  // assigned on confirm
+  unit              Unit?    @relation("UnitReservation", fields: [unitId], references: [id])
+  status            String   // HOLD | PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED
+  checkIn           DateTime
+  checkOut          DateTime
+  adults            Int      @default(1)
+  children          Int      @default(0)
+  pricingSnapshot   Json     // full breakdown at booking time
+  subtotal          Int
+  tax               Int
+  fees              Int
+  discount          Int
+  total             Int
+  currency          String   @default("INR")
+  
+  // Customer info
+  customerEmail     String
+  customerName      String?
+  customerPhone     String?
+  customerAddress   String?
+  specialRequests   String?
+  
+  // Coupon applied
+  couponCode        String?
+  couponDiscount    Int      @default(0)
+  
+  // Technical fields
+  idempotencyKey    String?  @unique
+  razorpayOrderId   String?  @unique
+  razorpayPaymentId String?
+  source            String   @default("WEBSITE") // WEBSITE | ADMIN | OTA
+  cancellationReason String?
+  
+  // Timestamps
+  holdExpiresAt     DateTime?
+  paidAt            DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Block {
+  id          String    @id @default(cuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unitTypeId  String
+  unitType    UnitType  @relation(fields: [unitTypeId], references: [id])
+  unitId      String?
+  unit        Unit?     @relation(fields: [unitId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  reason      String
+  notes       String?
+  source      String    @default("ADMIN") // ADMIN | OTA | MAINTENANCE
+  externalId  String?   // For OTA blocks
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  role          String    @default("STAFF") // ADMIN | MANAGER | STAFF
+  properties    String[]  // Array of propertyIds the user has access to
+  passwordHash  String?
+  emailVerified DateTime?
+  image         String?
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String?
+  propertyId  String?
+  entityType  String    // 'reservation', 'block', 'rate', etc
+  entityId    String
+  action      String    // 'create', 'update', 'delete', etc
+  details     Json
+  ipAddress   String?
+  userAgent   String?
+  
+  // Timestamp
+  createdAt   DateTime  @default(now())
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  eventType   String
+  payload     Json
+  status      String    @default("PENDING") // PENDING | DELIVERED | FAILED
+  destination String    // 'razorpay', 'n8n', 'ota', etc
+  attempts    Int       @default(0)
+  error       String?
+  
+  // Timestamps
+  nextAttempt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
